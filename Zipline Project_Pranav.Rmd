@@ -1,0 +1,216 @@
+---
+title: "Zipline project"
+author: "Pranav sai reddy Gudipally"
+date: "May 4, 2019"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("C:\\Users\\saipr\\Downloads\\data_scientist_take-home\\data_scientist_take-home")
+getwd()
+dir()
+mydata<-read.csv("summary_data.csv")
+View(mydata)
+```
+
+##Data check for cleanliness
+
+```{r}
+library(VIM)
+aggr(mydata)
+```
+The data does not look clean as it seems to have some missing values, lets dig deeep and see how we can cleanse the data
+
+
+##Data cleaning
+
+```{r}
+#there seems to be missing values in one column of the dataset so we clean that variable
+
+hist(mydata$preflight_voltage) #the data in this column seems to be somewhat normal, so we replace the NA values in this column with the mean(average) which here is 32.14566493
+mydata[is.na(mydata)] <- 32.14566493
+View(mydata)
+```
+
+##data check for cleanliness
+```{r}
+aggr(mydata)
+```
+The data seems to be completely clean now 
+
+#Exploratory Data Analysis
+
+We now remove unwanted columns and non numeric data that we don't need and plot the correlation matrix to see the correlation between diffferent variables to be able to perform effective analysis and plot visuals
+
+```{r}
+reqdata<-mydata[-c(3,4,8,14)]#considering only required variables, naming the new data frame as "reqdata"
+View(reqdata)
+```
+#Visualizations
+
+
+
+
+##Ground speed
+
+```{r}
+library(ggplot2)
+ggplot(reqdata, aes(x=launch_groundspeed))+
+  geom_histogram(bins=50,color="yellow")
+```
+ 
+It is clear looking at the graph above that, ideal or average ground speed of the planes during launch is anywhere very very close to 30 meters/second
+
+
+##Air speed
+
+```{r}
+ggplot(reqdata, aes(x=launch_airspeed))+
+  geom_histogram(bins = 50,color="red")
+```
+
+Looking at the graph above, we can say that, considering that the flights are working at their best potential, their ideal or average air speed of the plane during launch is anywhere close to 32.5 meters/second
+
+
+##Pre-flight Voltage
+
+```{r}
+ggplot(reqdata, aes(x=preflight_voltage))+
+  geom_histogram(bins = 50,color="magenta")
+```
+
+We can see  that dc voltage of the battery immediately prior to launch of most flights is around 32.35 volts
+
+
+##Static Pressure
+
+```{r}
+ggplot(reqdata, aes(x=static_pressure))+
+  geom_histogram(bins = 50,color="green")
+```
+
+We can look at the graph and interpret that the average static air pressure during launch for flights is around 80400 to 80600 pascals
+
+
+
+##Wind magnitude
+
+```{r}
+ggplot(reqdata, aes(x=wind_magnitude))+
+  geom_histogram(bins = 50,color="purple")
+```
+
+Average condition of magnitude of wing during launch is said to be around2 to 3 meters/second
+
+##Wind Direction
+```{r}
+ggplot(reqdata, aes(x=wind_direction))+
+  geom_histogram(bins = 50,color="green")
+```
+
+Wind direction on most of the occassions was to the North west direction during the take off or launch of our flights
+
+
+###Looking at the above graphs we can infer that an average, normal or ideal condition for a flight is when 
+- Ground speed of the plane during launch is anywhere very very close to 30 meters/second
+- Air speed of the plane during launch is anywhere close to 32.5 meters/second
+- Direct Current voltage of the battery immediately prior to launch of most flights is around 32.35 volts
+- Static air pressure during launch for flights is around 80400 to 80600 pascals
+- magnitude of wing during launch is said to be around 2 to 3 meters/second
+- Having wind direction North West
+
+
+
+Correlation matrix generation for multi variable EDA
+
+```{r}
+cordata<-reqdata[-c(3)]#removal of non numeric variables
+cor(cordata) #correlation matrix generation
+```
+
+As we can see a good correlation between a few variables like wind magnitude and launch airspeed(56%), it would be better to find insights between them and the same can be done to other variables having a good enough correlation(or inverse correlation)
+
+
+
+#Multi Variable Visualization
+
+##Commit and Launch airspeed
+
+
+```{r}
+ggplot(reqdata, aes(y=launch_airspeed, x =(commit), fill= factor(commit))) +ylim(c(31,33))+
+  geom_point()
+```
+
+Looking at the plot above we can say that the sofware named "5c504d9a16" has been used the highest and is also the one giving good results, which is a launch airspeed value of 32.5 m/s
+
+##Commit and launch groundspeed
+
+```{r}
+ggplot(reqdata, aes(y=launch_groundspeed, x =(commit), fill= factor(commit))) +ylim(c(29.5,31))+
+  geom_violin()
+```
+
+Looking at the plot above we can say that the sofware named "1ecbc27833" is the one giving good results as it relates to average groundspeed of 30 m/s
+
+
+
+
+
+##Launch air speed and wind magnitude
+```{r}
+reg<-lm(mydata$launch_airspeed~ mydata$wind_magnitude)
+plot(mydata$wind_magnitude , mydata$launch_airspeed) + abline(reg,col="red")
+
+```
+Looking at the above  plot it is clear that with increase in wind magnitude, there is an increase in launch air speed too, that means both of these variables are directly proportional to each other, and as most of the data point are around the line itself, there is no point to detect outliers here as it would do a negligible change to the line ultimately giving out similar insights
+
+
+
+##Relative humidity and static pressure
+```{r}
+ggplot(reqdata, aes(y=rel_humidity, x =(static_pressure))) +
+  geom_line()+geom_smooth(method='lm')
+```
+
+We can see that, with increase in static pressure there is also an increase in relative humidity and vice versa, both of there variables are directly proportional to each other
+
+
+
+##Relative humidity and air temperature
+```{r}
+ggplot(reqdata, aes(y=rel_humidity, x =(air_temperature))) +
+  geom_point()+geom_smooth(method='lm')
+```
+
+We can see that, with decrease in relative humidity there is also a decrease in air temperature and vice versa, both of there variables are directly proportional to each other
+
+
+
+
+##Air temperature and air speed at launch
+```{r}
+ggplot(reqdata, aes(y=launch_airspeed, x =(air_temperature))) +
+  geom_line()+geom_smooth(method='lm')
+```
+
+We can see that, with increase in temperature of the air there is also an increase in air speed of the plane during launch and vice versa, both of there variables are directly proportional to each other
+
+
+
+
+```{r}
+ggplot(reqdata, aes(y=launch_airspeed, x =(wind_magnitude)))+
+  geom_point()+geom_smooth(method='lm')
+```
+
+
+We can see that, with increase in wind magnitude there is also an increase in air speed of plane during launch and vice versa, both of there variables are directly proportional to each other, outlier removal can be done for the above graph if needed by using the "xlim()" and "ylim()" functions but it would give the similar graph as we do not have extreme outlier density
+
+
+
+
+`
